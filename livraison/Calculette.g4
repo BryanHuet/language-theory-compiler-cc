@@ -27,7 +27,18 @@ instruction returns [ String code ]
     ;
 
 expression returns [ String code ]
-    : a=expression op=('*'|'/') b=expression {
+    : '(' a=expression op=('-'|'+') b=expression ')' 
+        { 
+            $code = $a.code + $b.code;
+            $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
+        }
+
+    | '(' a=expression op=('*'|'/') b=expression ')' {
+        $code = $a.code + $b.code;
+        $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
+    }
+
+    | a=expression op=('*'|'/') b=expression {
         $code = $a.code + $b.code;
         $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
     }
