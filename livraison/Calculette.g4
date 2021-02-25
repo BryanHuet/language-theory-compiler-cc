@@ -42,20 +42,26 @@ decl returns [ String code ]
     :
         TYPE IDENTIFIANT finInstruction
         {
-             $code = "PUSHG "+$IDENTIFIANT.text+"\n";
-             tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            
+            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+             $code = "PUSHG "+at+"\n";
         }
     ; 
 
 assignation returns [ String code ] 
     : IDENTIFIANT '=' expression
         {  
-            $code = "STOREG "+$IDENTIFIANT.text+ $expression.code+"\n";
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = $expression.code;
+            $code += "STOREG "+at+"\n";
         }
     | IDENTIFIANT '+' expression
         {
-            $code = "STOREG "+$IDENTIFIANT.text+"\n";
-            $code += $expression.code;
+            
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = $expression.code;
+            $code += "STOREG "+at+"\n";
         }
     ;
 
