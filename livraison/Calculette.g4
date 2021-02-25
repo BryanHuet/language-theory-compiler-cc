@@ -26,15 +26,18 @@ instruction returns [ String code ]
     : expression finInstruction
         {
             $code = $expression.code;
+            $code += "POP\n";
         }
     | assignation finInstruction
         {
             $code = $assignation.code;
+            $code += "POP\n";
         }
 
    | finInstruction
         {
             $code="";
+            $code += "POP\n";
         }
     ;
 
@@ -44,9 +47,8 @@ decl returns [ String code ]
         {
             tablesSymboles.putVar($IDENTIFIANT.text,"int");
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n";
         }
-    | TYPE IDENTIFIANT '=' expression
+    | TYPE IDENTIFIANT '=' expression finInstruction
         {
             tablesSymboles.putVar($IDENTIFIANT.text,"int");
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
@@ -63,38 +65,6 @@ assignation returns [ String code ]
             $code = $expression.code;
             $code += "STOREG "+at.adresse+"\n";
         }
-    | IDENTIFIANT '*' expression
-        {
-
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = $expression.code;
-            $code += "MUL\n";
-            $code += "STOREG "+at.adresse+"\n";
-        }
-    | IDENTIFIANT '/' expression
-            {
-
-                AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-                $code = $expression.code;
-                $code += "DIV\n";
-                $code += "STOREG "+at.adresse+"\n";
-            }
-    | IDENTIFIANT '+' expression
-        {
-
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = $expression.code;
-            $code += "ADD\n";
-            $code += "STOREG "+at.adresse+"\n";
-        }
-    | IDENTIFIANT '-' expression
-            {
-
-                AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-                $code = $expression.code;
-                $code += "SUB\n";
-                $code += "STOREG "+at.adresse+"\n";
-            }
       ;
 
 expression returns [ String code ]
@@ -108,6 +78,22 @@ expression returns [ String code ]
         $code = $a.code + $b.code;
         $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
     }
+    | IDENTIFIANT op=('*'|'/') expression
+        {
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG "+at.adresse+"\n" + $expression.code;
+            $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
+        }
+
+    | IDENTIFIANT op=('+'|'-') expression
+        {
+
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG "+at.adresse+"\n" + $expression.code;
+            $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
+        } 
+
+ 
 
     | a=expression op=('*'|'/') b=expression {
         $code = $a.code + $b.code;
