@@ -1,7 +1,7 @@
 grammar Calculette;
 
 @members {
-     private TablesSymboles tablesSymboles = new TablesSymboles(); 
+     private TablesSymboles tablesSymboles = new TablesSymboles();
           }
 
 
@@ -10,25 +10,25 @@ grammar Calculette;
 start
     : calcul EOF;
 
-calcul returns [ String code ] 
-@init{ $code = new String(); }   // On initialise code, pour ensuite l'utiliser comme accumulateur 
+calcul returns [ String code ]
+@init{ $code = new String(); }   // On initialise code, pour ensuite l'utiliser comme accumulateur
 @after{ System.out.println($code); }
-    :   (decl { $code += $decl.code; })*        
-        
+    :   (decl { $code += $decl.code; })*
+
         NEWLINE*
-        
+
         (instruction { $code += $instruction.code; })*
 
-        { $code += "  HALT\n"; } 
+        { $code += "  HALT\n"; }
     ;
 
-instruction returns [ String code ] 
-    : expression finInstruction 
-        { 
+instruction returns [ String code ]
+    : expression finInstruction
+        {
             $code = $expression.code;
         }
     | assignation finInstruction
-        { 
+        {
             $code = $assignation.code;
         }
 
@@ -38,7 +38,7 @@ instruction returns [ String code ]
         }
     ;
 
-decl returns [ String code ] 
+decl returns [ String code ]
     :
         TYPE IDENTIFIANT finInstruction
         {
@@ -54,28 +54,52 @@ decl returns [ String code ]
             $code += $expression.code;
             $code += "STOREG "+at.adresse+"\n";
         }
-    ; 
+    ;
 
-assignation returns [ String code ] 
+assignation returns [ String code ]
     : IDENTIFIANT '=' expression
-        {  
+        {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = $expression.code;
             $code += "STOREG "+at.adresse+"\n";
         }
+    | IDENTIFIANT '*' expression
+        {
+
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = $expression.code;
+            $code += "MUL\n";
+            $code += "STOREG "+at.adresse+"\n";
+        }
+    | IDENTIFIANT '/' expression
+            {
+
+                AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+                $code = $expression.code;
+                $code += "DIV\n";
+                $code += "STOREG "+at.adresse+"\n";
+            }
     | IDENTIFIANT '+' expression
         {
-            
+
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = $expression.code;
             $code += "ADD\n";
             $code += "STOREG "+at.adresse+"\n";
         }
-    ;
+    | IDENTIFIANT '-' expression
+            {
+
+                AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+                $code = $expression.code;
+                $code += "SUB\n";
+                $code += "STOREG "+at.adresse+"\n";
+            }
+      ;
 
 expression returns [ String code ]
-    : '(' a=expression op=('-'|'+') b=expression ')' 
-        { 
+    : '(' a=expression op=('-'|'+') b=expression ')'
+        {
             $code = $a.code + $b.code;
             $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
         }
@@ -90,8 +114,8 @@ expression returns [ String code ]
         $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
     }
 
-    | a=expression op=('-'|'+') b=expression 
-        { 
+    | a=expression op=('-'|'+') b=expression
+        {
             $code = $a.code + $b.code;
             $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
         }
@@ -101,10 +125,10 @@ expression returns [ String code ]
     }
 
     | '-' NUMBER
-     { 
+     {
          $code = "PUSHI -"+$NUMBER.text+"\n";
      }
-    | NUMBER 
+    | NUMBER
         {
             $code = "PUSHI "+$NUMBER.text+"\n";
         }
@@ -128,7 +152,3 @@ WS :   (' '|'\t')+ -> skip  ;
 NUMBER : ('0'..'9')+  ;
 
 UNMATCH : . -> skip ;
-
-
-
-
