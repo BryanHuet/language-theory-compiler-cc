@@ -42,10 +42,17 @@ decl returns [ String code ]
     :
         TYPE IDENTIFIANT finInstruction
         {
-            
             tablesSymboles.putVar($IDENTIFIANT.text,"int");
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-             $code = "PUSHG "+at+"\n";
+            $code = "PUSHG "+at.adresse+"\n";
+        }
+    | TYPE IDENTIFIANT '=' expression
+        {
+            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG "+at.adresse+"\n";
+            $code += $expression.code;
+            $code += "STOREG "+at.adresse+"\n";
         }
     ; 
 
@@ -54,14 +61,15 @@ assignation returns [ String code ]
         {  
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = $expression.code;
-            $code += "STOREG "+at+"\n";
+            $code += "STOREG "+at.adresse+"\n";
         }
     | IDENTIFIANT '+' expression
         {
             
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = $expression.code;
-            $code += "STOREG "+at+"\n";
+            $code += "ADD\n";
+            $code += "STOREG "+at.adresse+"\n";
         }
     ;
 
@@ -87,6 +95,15 @@ expression returns [ String code ]
             $code = $a.code + $b.code;
             $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
         }
+    | op=('(-'|'(') NUMBER ')'
+    {
+        $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
+    }
+
+    | '-' NUMBER
+     { 
+         $code = "PUSHI -"+$NUMBER.text+"\n";
+     }
     | NUMBER 
         {
             $code = "PUSHI "+$NUMBER.text+"\n";
