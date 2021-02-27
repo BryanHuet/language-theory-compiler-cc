@@ -1,6 +1,10 @@
 grammar Calculette;
 
 @members {
+     private int _cur_label = 1;
+     /** générateur de nom d'étiquettes pour les boucles */
+     private String getNewLabel() { return "B" +(_cur_label++);}
+
      private TablesSymboles tablesSymboles = new TablesSymboles();
           }
 
@@ -33,16 +37,28 @@ instruction returns [ String code ]
             $code = $assignation.code;
         }
 
-   | finInstruction
+    | condition finInstruction
+        {
+            $code = $condition.code;
+            $code += "POP\n";
+        }
+
+    | methode finInstruction
+        {
+            $code = $methode.code;
+        }
+
+    | finInstruction
         {
             $code="";
             $code += "POP\n";
         }
     ;
 
+
+
 decl returns [ String code ]
-    :
-        TYPE IDENTIFIANT finInstruction
+    : TYPE IDENTIFIANT finInstruction
         {
             tablesSymboles.putVar($IDENTIFIANT.text,"int");
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
@@ -67,6 +83,31 @@ assignation returns [ String code ]
         }
       ;
 
+methode returns [ String code ]
+    : 'read(' IDENTIFIANT ')'
+        {
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "READ\n";
+            $code += "STOREG "+at.adresse+"\n";
+        }
+    | 'write(' IDENTIFIANT ')'
+        {
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG "+at.adresse+"\n";
+            $code += "WRITE\n";
+        }
+
+    | 'while(' a=condition ')' b=assignation 
+        { 
+            $code = "LABEL debutB\n";
+            $code += $a.code;
+            $code += "JUMPF finB\n";
+            $code += $b.code;
+            $code += "JUMP debutB\n";
+            $code += "LABEL finB\n";
+        }
+
+    ;
 expression returns [ String code ]
     : '(' a=expression op=('-'|'+') b=expression ')'
         {
@@ -129,7 +170,16 @@ expression returns [ String code ]
         }
     ;
 
-
+condition returns [String code]
+    : 'true'  { $code = "  PUSHI 1\n"; }
+    | 'false' { $code = "  PUSHI 0\n"; }
+    | IDENTIFIANT '<' expression 
+        { 
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG "+at.adresse+"\n" + $expression.code;
+            $code += "INF\n";   
+        }
+    ;
 
 finInstruction : ( NEWLINE | ';' )+ ;
 
@@ -140,7 +190,7 @@ NEWLINE : '\r'? '\n';
 
 TYPE : 'int' | 'float' ;
 
-IDENTIFIANT : ('a'..'z'|'A'..'Z')+ ;
+IDENTIFIANT : ('a'..'z'|'A'..'Z')+;
 
 WS :   (' '|'\t')+ -> skip  ;
 
