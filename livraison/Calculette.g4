@@ -8,8 +8,6 @@ grammar Calculette;
      private TablesSymboles tablesSymboles = new TablesSymboles();
           }
 
-
-
 //parser
 start
     : calcul EOF;
@@ -55,8 +53,6 @@ instruction returns [ String code ]
         }
     ;
 
-
-
 decl returns [ String code ]
     : TYPE IDENTIFIANT finInstruction
         {
@@ -97,8 +93,8 @@ methode returns [ String code ]
             $code += "WRITE\n";
         }
 
-    | 'while(' a=condition ')' b=assignation 
-        { 
+    | 'while(' a=condition ')' b=assignation
+        {
             $code = "LABEL debutB\n";
             $code += $a.code;
             $code += "JUMPF finB\n";
@@ -106,8 +102,8 @@ methode returns [ String code ]
             $code += "JUMP debutB\n";
             $code += "LABEL finB\n";
         }
-
     ;
+
 expression returns [ String code ]
     : '(' a=expression op=('-'|'+') b=expression ')'
         {
@@ -142,7 +138,7 @@ expression returns [ String code ]
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "PUSHG "+at.adresse+"\n" + $expression.code;
             $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
-        } 
+        }
 
     | a=expression op=('*'|'/') b=expression {
         $code = $a.code + $b.code;
@@ -155,7 +151,7 @@ expression returns [ String code ]
             $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
         }
     | op=('(-'|'(') NUMBER ')'
-    
+
     {
         $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
     }
@@ -173,17 +169,20 @@ expression returns [ String code ]
 condition returns [String code]
     : 'true'  { $code = "  PUSHI 1\n"; }
     | 'false' { $code = "  PUSHI 0\n"; }
-    | IDENTIFIANT '<' expression 
-        { 
+    | IDENTIFIANT op=('=='|'!='|'<'|'>'|'<='|'>=') expression
+        {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n" + $expression.code;
-            $code += "INF\n";   
+            $code = "PUSHG " + at.adresse + "\n" + $expression.code;
+            if ($op.text.equals("==")){ $code += "EQUAL\n"; }
+            else if ($op.text.equals("!=")){ $code += "NEQ\n"; }
+            else if ($op.text.equals("<")){ $code += "INF\n"; }
+            else if ($op.text.equals(">")){ $code += "SUP\n"; }
+            else if ($op.text.equals("<=")){ $code += "INFEQ\n"; }
+            else if ($op.text.equals(">=")){ $code += "SUPEQ\n"; }
         }
     ;
 
 finInstruction : ( NEWLINE | ';' )+ ;
-
-
 
 // lexer
 NEWLINE : '\r'? '\n';
