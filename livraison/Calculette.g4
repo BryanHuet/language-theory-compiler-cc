@@ -24,6 +24,14 @@ calcul returns [ String code ]
         { $code += "  HALT\n"; }
     ;
 
+corp returns [ String code ]
+    :   (decl { $code += $decl.code; })*
+
+        NEWLINE*
+
+        (instruction { $code += $instruction.code; })*
+    ;
+
 instruction returns [ String code ]
     : expression finInstruction
         {
@@ -91,16 +99,30 @@ methode returns [ String code ]
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "PUSHG "+at.adresse+"\n";
             $code += "WRITE\n";
+            $code += "POP\n";
+        }
+    | 'while(' a=condition ')' BLOCK_DEBUT b=corp BLOCK_END
+        {
+            String debutB = getNewLabel();
+            String finB = getNewLabel();
+            $code = "LABEL "+debutB+"\n";
+            $code += $a.code;
+            $code += "JUMPF "+finB+"\n";
+            $code += $b.code;
+            $code += "JUMP "+debutB+"\n";
+            $code += "LABEL "+finB+"\n";
         }
 
-    | 'while(' a=condition ')' b=assignation
+    | 'while(' ab=condition ')' bb=instruction
         {
-            $code = "LABEL debutB\n";
-            $code += $a.code;
-            $code += "JUMPF finB\n";
-            $code += $b.code;
-            $code += "JUMP debutB\n";
-            $code += "LABEL finB\n";
+            String debutB = getNewLabel();
+            String finB = getNewLabel();
+            $code = "LABEL "+debutB+"\n";
+            $code += $ab.code;
+            $code += "JUMPF "+finB+"\n";
+            $code += $bb.code;
+            $code += "JUMP "+debutB+"\n";
+            $code += "LABEL "+finB+"\n";
         }
     ;
 
@@ -194,5 +216,9 @@ IDENTIFIANT : ('a'..'z'|'A'..'Z')+;
 WS :   (' '|'\t')+ -> skip  ;
 
 NUMBER : ('0'..'9')+  ;
+
+BLOCK_DEBUT: '{';
+
+BLOCK_END: '}';
 
 UNMATCH : . -> skip ;
