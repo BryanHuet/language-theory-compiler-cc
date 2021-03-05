@@ -199,9 +199,7 @@ IDENTIFIANT : ('a'..'z'|'A'..'Z')+;
 
 WS :   (' '|'\t')+ -> skip  ;
 
-NUMBER : ('0'..'9')+  
-         { System.out.print("<span style='color:red'>"+getText()+ "</span>"); }
-;
+NUMBER : ('0'..'9')+  ;
 
 BLOCK_DEBUT: '{';
 
