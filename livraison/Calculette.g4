@@ -24,7 +24,9 @@ calcul returns [ String code ]
         { $code += "  HALT\n"; }
     ;
 
-corp returns [ String code ]
+corp_boucle returns [ String code ]
+@init{ $code = new String(); }  
+@after{ System.out.println($code); }
     :   (decl { $code += $decl.code; })*
 
         NEWLINE*
@@ -94,14 +96,13 @@ methode returns [ String code ]
             $code = "READ\n";
             $code += "STOREG "+at.adresse+"\n";
         }
-    | 'write(' IDENTIFIANT ')'
+    | 'write(' expression ')'
         {
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n";
+            $code = $expression.code;
             $code += "WRITE\n";
             $code += "POP\n";
         }
-    | 'while(' a=condition ')' BLOCK_DEBUT b=corp BLOCK_END
+    | 'while(' a=condition ')' BLOCK_DEBUT b=corp_boucle BLOCK_END
         {
             String debutB = getNewLabel();
             String finB = getNewLabel();
@@ -138,29 +139,6 @@ expression returns [ String code ]
         $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
     }
 
-    | ai=IDENTIFIANT op=('+'|'-') bi=IDENTIFIANT
-        {
-            AdresseType ata = tablesSymboles.getAdresseType($ai.text);
-            AdresseType atb = tablesSymboles.getAdresseType($bi.text);
-            $code = "PUSHG "+ata.adresse+"\n";
-            $code += "PUSHG "+atb.adresse+"\n";
-            $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
-        }
-
-    | IDENTIFIANT op=('*'|'/') expression
-        {
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n" + $expression.code;
-            $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
-        }
-
-    | IDENTIFIANT op=('+'|'-') expression
-        {
-
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n" + $expression.code;
-            $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
-        }
 
     | a=expression op=('*'|'/') b=expression {
         $code = $a.code + $b.code;
@@ -177,6 +155,12 @@ expression returns [ String code ]
     {
         $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
     }
+
+    | IDENTIFIANT
+        { 
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG "+at.adresse+"\n";
+        }
 
     | '-' NUMBER
      {
@@ -215,7 +199,9 @@ IDENTIFIANT : ('a'..'z'|'A'..'Z')+;
 
 WS :   (' '|'\t')+ -> skip  ;
 
-NUMBER : ('0'..'9')+  ;
+NUMBER : ('0'..'9')+  
+         { System.out.print("<span style='color:red'>"+getText()+ "</span>"); }
+;
 
 BLOCK_DEBUT: '{';
 
