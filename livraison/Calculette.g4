@@ -24,16 +24,6 @@ calcul returns [ String code ]
         { $code += "  HALT\n"; }
     ;
 
-corp_boucle returns [ String code ]
-@init{ $code = new String(); }  
-@after{ System.out.println($code); }
-    :   (decl { $code += $decl.code; })*
-
-        NEWLINE*
-
-        (instruction { $code += $instruction.code; })*
-    ;
-
 instruction returns [ String code ]
     : expression finInstruction
         {
@@ -102,7 +92,7 @@ methode returns [ String code ]
             $code += "WRITE\n";
             $code += "POP\n";
         }
-    | 'while' + '(' a=condition ')' BLOCK_DEBUT b=corp_boucle BLOCK_END
+    | 'while' + '(' a=condition ')' BLOCK_DEBUT b=instruction* BLOCK_END
         {
             String debutB = getNewLabel();
             String finB = getNewLabel();
