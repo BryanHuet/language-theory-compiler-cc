@@ -38,7 +38,6 @@ instruction returns [ String code ]
     | condition finInstruction
         {
             $code = $condition.code;
-            $code += "POP\n";
         }
 
     | methode finInstruction
@@ -165,10 +164,9 @@ expression returns [ String code ]
 condition returns [String code]
     : 'true'  { $code = "  PUSHI 1\n"; }
     | 'false' { $code = "  PUSHI 0\n"; }
-    | IDENTIFIANT op=('=='|'!='|'<'|'>'|'<='|'>=') expression
+    | expr1=expression op=('=='|'!='|'<'|'>'|'<='|'>=') expr2=expression
         {
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG " + at.adresse + "\n" + $expression.code;
+            $code = $expr1.code + $expr2.code;
             if ($op.text.equals("==")){ $code += "EQUAL\n"; }
             else if ($op.text.equals("!=")){ $code += "NEQ\n"; }
             else if ($op.text.equals("<")){ $code += "INF\n"; }
@@ -176,6 +174,22 @@ condition returns [String code]
             else if ($op.text.equals("<=")){ $code += "INFEQ\n"; }
             else if ($op.text.equals(">=")){ $code += "SUPEQ\n"; }
         }
+    | '!' expr3=expression op=('=='|'!='|'<'|'>'|'<='|'>=') expr4=expression
+        {
+            $code = $expr3.code + $expr4.code;
+            if ($op.text.equals("==")){ $code += "NEQ\n"; }
+            else if ($op.text.equals("!=")){ $code += "EQUAL\n"; }
+            else if ($op.text.equals("<")){ $code += "SUP\n"; }
+            else if ($op.text.equals(">")){ $code += "INF\n"; }
+            else if ($op.text.equals("<=")){ $code += "SUPEQ\n"; }
+            else if ($op.text.equals(">=")){ $code += "INFEQ\n"; }
+        }
+    | exprA = condition op='&&' exprB = condition
+        { 
+            $code = $exprA.code + $exprB.code;
+            $code += "MUL \n";
+        }
+
     ;
 
 finInstruction : ( NEWLINE | ';' )+ ;
