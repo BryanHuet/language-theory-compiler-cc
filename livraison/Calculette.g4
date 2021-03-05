@@ -90,19 +90,19 @@ assignation returns [ String code ]
       ;
 
 methode returns [ String code ]
-    : 'read(' IDENTIFIANT ')'
+    : 'read' + '(' IDENTIFIANT ')'
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "READ\n";
             $code += "STOREG "+at.adresse+"\n";
         }
-    | 'write(' expression ')'
+    | 'write' + '(' expression ')'
         {
             $code = $expression.code;
             $code += "WRITE\n";
             $code += "POP\n";
         }
-    | 'while(' a=condition ')' BLOCK_DEBUT b=corp_boucle BLOCK_END
+    | 'while' + '(' a=condition ')' BLOCK_DEBUT b=corp_boucle BLOCK_END
         {
             String debutB = getNewLabel();
             String finB = getNewLabel();
@@ -114,7 +114,7 @@ methode returns [ String code ]
             $code += "LABEL "+finB+"\n";
         }
 
-    | 'while(' ab=condition ')' bb=instruction
+    | 'while' + '(' ab=condition ')' bb=instruction
         {
             String debutB = getNewLabel();
             String finB = getNewLabel();
