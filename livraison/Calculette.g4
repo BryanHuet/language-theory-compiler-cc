@@ -123,6 +123,43 @@ methode returns [ String code ]
             $code += "JUMP "+debutB+"\n";
             $code += "LABEL "+finB+"\n";
         }
+    | 'if' + '(' condif=condition ')' then=instruction
+        {
+            String debutIf = getNewLabel();
+            String finIf = getNewLabel();
+            $code = "LABEL "+debutIf+"\n";
+            $code += $condif.code;
+            $code += "JUMPF "+finIf+"\n";
+            $code += $then.code;
+            $code += "LABEL "+finIf+"\n";
+        }    
+    | 'if' + '(' condifb=condition ')' BLOCK_DEBUT blocif=bloc_instructs BLOCK_END
+        {
+            String debutIf = getNewLabel();
+            String finIf = getNewLabel();
+            $code = "LABEL "+debutIf+"\n";
+            $code += $condifb.code;
+            $code += "JUMPF "+finIf+"\n";
+            $code += $blocif.code;
+            $code += "LABEL "+finIf+"\n";
+        } 
+    | 'if' + '(' condifelse=condition ')' BLOCK_DEBUT blocifelse=bloc_instructs BLOCK_END 
+        'else' BLOCK_DEBUT blocelse=bloc_instructs BLOCK_END
+        {
+            String debutIf = getNewLabel();
+            String finIf = getNewLabel();
+            String finElse = getNewLabel();
+            $code = "LABEL "+debutIf+"\n";
+            $code += $condifelse.code;
+            $code += "JUMPF "+finIf+"\n";
+            $code += $blocifelse.code;
+            $code += "JUMP "+finElse+"\n";
+            $code += "LABEL "+finIf+"\n";
+            $code += $blocelse.code;
+            $code += "LABEL "+finElse+"\n";
+
+        }
+
     ;
 
 expression returns [ String code ]
