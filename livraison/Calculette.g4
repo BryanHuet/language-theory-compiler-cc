@@ -1,12 +1,46 @@
 grammar Calculette;
 
 @members {
-     private int _cur_label = 1;
+    private int _cur_label = 1;
      /** générateur de nom d'étiquettes pour les boucles */
-     private String getNewLabel() { return "B" +(_cur_label++);}
+    private String getNewLabel() { return "B" + (_cur_label++);}
 
-     private TablesSymboles tablesSymboles = new TablesSymboles();
-          }
+    private TablesSymboles tablesSymboles = new TablesSymboles();
+
+    private String loopWhile(String conditions, String instructions){
+        String debutB = getNewLabel();
+        String finB = getNewLabel();
+        String code = "LABEL "+debutB+"\n";
+        code += conditions;
+        code += "JUMPF "+finB+"\n";
+        code += instructions;
+        code += "JUMP "+debutB+"\n";
+        code += "LABEL "+finB+"\n";
+        return code;
+    }
+
+    private String ifThenElse(String conditions, String instructions, String instructElse){
+
+            String finIf = getNewLabel();
+            String finElse = getNewLabel();
+            String code = "";
+            code += conditions;
+            code += "JUMPF " + finIf + "\n";
+            code += instructions;
+            if(instructElse != "null"){
+                code += "JUMP " + finElse + "\n";
+                code += "LABEL " + finIf + "\n";
+                code += instructElse;
+                code += "LABEL " + finElse + "\n";
+            }else{
+                code += "LABEL " + finIf + "\n";
+            }
+
+            return code;
+    }
+
+
+}
 
 //parser
 start
@@ -56,7 +90,7 @@ instruction returns [ String code ]
 
     | finInstruction
         {
-            $code="";
+            $code ="";
             $code += "POP\n";
         }
     ;
@@ -68,14 +102,6 @@ decl returns [ String code ]
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "PUSHG "+at.adresse+"\n";
         }
-    | TYPE IDENTIFIANT '=' expression finInstruction
-        {
-            tablesSymboles.putVar($IDENTIFIANT.text,"int");
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n";
-            $code += $expression.code;
-            $code += "STOREG "+at.adresse+"\n";
-        }
     ;
 
 assignation returns [ String code ]
@@ -85,6 +111,14 @@ assignation returns [ String code ]
             $code = $expression.code;
             $code += "STOREG "+at.adresse+"\n";
         }
+    | TYPE IDENTIFIANT '=' expression
+        {
+            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG "+at.adresse+"\n";
+            $code += $expression.code;
+            $code += "STOREG "+at.adresse+"\n";
+        }
       ;
 
 methode returns [ String code ]
@@ -92,7 +126,7 @@ methode returns [ String code ]
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "READ\n";
-            $code += "STOREG "+at.adresse+"\n";
+            $code += "STOREG "+ at.adresse+"\n";
         }
     | 'write' + '(' expression ')'
         {
@@ -102,62 +136,45 @@ methode returns [ String code ]
         }
     | 'while' + '(' a=condition ')' BLOCK_DEBUT b=bloc_instructs BLOCK_END
         {
-            String debutB = getNewLabel();
-            String finB = getNewLabel();
-            $code = "LABEL "+debutB+"\n";
-            $code += $a.code;
-            $code += "JUMPF "+finB+"\n";
-            $code += $b.code;
-            $code += "JUMP "+debutB+"\n";
-            $code += "LABEL "+finB+"\n";
+            $code = loopWhile($a.code, $b.code);
         }
 
     | 'while' + '(' ab=condition ')' bb=instruction
         {
-            String debutB = getNewLabel();
-            String finB = getNewLabel();
-            $code = "LABEL "+debutB+"\n";
-            $code += $ab.code;
-            $code += "JUMPF "+finB+"\n";
-            $code += $bb.code;
-            $code += "JUMP "+debutB+"\n";
-            $code += "LABEL "+finB+"\n";
+            $code = loopWhile($ab.code, $bb.code);
         }
-    | 'if' + '(' condif=condition ')' then=instruction
+    | 'for' + '(' forAss=assignation ';' forCond=condition ';' forAssb=assignation ')' forIn=instruction
         {
-            String debutIf = getNewLabel();
-            String finIf = getNewLabel();
-            $code = "LABEL "+debutIf+"\n";
-            $code += $condif.code;
-            $code += "JUMPF "+finIf+"\n";
-            $code += $then.code;
-            $code += "LABEL "+finIf+"\n";
-        }    
-    | 'if' + '(' condifb=condition ')' BLOCK_DEBUT blocif=bloc_instructs BLOCK_END
-        {
-            String debutIf = getNewLabel();
-            String finIf = getNewLabel();
-            $code = "LABEL "+debutIf+"\n";
-            $code += $condifb.code;
-            $code += "JUMPF "+finIf+"\n";
-            $code += $blocif.code;
-            $code += "LABEL "+finIf+"\n";
-        } 
-    | 'if' + '(' condifelse=condition ')' BLOCK_DEBUT blocifelse=bloc_instructs BLOCK_END 
-        'else' BLOCK_DEBUT blocelse=bloc_instructs BLOCK_END
-        {
-            String debutIf = getNewLabel();
-            String finIf = getNewLabel();
-            String finElse = getNewLabel();
-            $code = "LABEL "+debutIf+"\n";
-            $code += $condifelse.code;
-            $code += "JUMPF "+finIf+"\n";
-            $code += $blocifelse.code;
-            $code += "JUMP "+finElse+"\n";
-            $code += "LABEL "+finIf+"\n";
-            $code += $blocelse.code;
-            $code += "LABEL "+finElse+"\n";
+            String debutFor = getNewLabel();
+            String finFor = getNewLabel();
+            $code = $forAss.code;
+            $code += "LABEL " + debutFor + "\n";
+            $code += $forCond.code;
+            $code += "JUMPF " + finFor + "\n";
+            $code += $forIn.code;
+            $code += $forAssb.code;
+            $code += "JUMP " + debutFor + "\n";
+            $code += "LABEL " + finFor + "\n";
+        }
 
+
+    | 'if' + '(' condif = condition ')' then = instruction
+        {
+            $code = ifThenElse($condif.code, $then.code, "null");
+        }    
+    | 'if' + '(' condifE = condition ')' thenE = instruction 'else' elseE = instruction 
+        {
+            $code = ifThenElse($condifE.code, $thenE.code, $elseE.code);
+        }
+
+    | 'if' + '(' condifb = condition ')' BLOCK_DEBUT blocif = bloc_instructs BLOCK_END
+        {
+            $code = ifThenElse($condifb.code, $blocif.code, "null");
+        } 
+    | 'if' + '(' condifelse = condition ')' BLOCK_DEBUT blocifelse = bloc_instructs BLOCK_END 
+        'else' BLOCK_DEBUT blocelse = bloc_instructs BLOCK_END
+        {
+            $code = ifThenElse($condifelse.code, $blocelse.code, $blocelse.code);
         }
 
     ;
