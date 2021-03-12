@@ -9,6 +9,6 @@ Compiler la grammaire :
 arbre antler :
 	- java org.antlr.v4.runtime.misc.TestRig Calculette start -gui
 
-Commande MVAP : 
-java MVaPAssembler -d testcode.mvap
-java CBaP -d testcode.mvap.cbap
+Commande MVAP :
+java MVaPAssembler -d test.mvap
+java CBaP -d test.mvap.cbap

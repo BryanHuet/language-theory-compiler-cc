@@ -155,7 +155,7 @@ expression returns [ String code ]
     }
 
     | IDENTIFIANT
-        { 
+        {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "PUSHG "+at.adresse+"\n";
         }
@@ -193,10 +193,19 @@ condition returns [String code]
             else if ($op.text.equals("<=")){ $code += "SUPEQ\n"; }
             else if ($op.text.equals(">=")){ $code += "INFEQ\n"; }
         }
+
     | exprA = condition op='&&' exprB = condition
-        { 
+        {
             $code = $exprA.code + $exprB.code;
             $code += "MUL \n";
+        }
+
+    | exprC = condition op='||' exprD = condition
+        {
+            $code = $exprC.code + $exprD.code + "\n";
+            $code += "ADD \n";
+            $code += "PUSHI 0 \n";
+            $code += "SUP \n";
         }
 
     ;

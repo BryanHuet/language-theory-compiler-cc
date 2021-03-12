@@ -1,4 +1,4 @@
-// Generated from Calculette.g4 by ANTLR 4.9.1
+// Generated from Calculette.g4 by ANTLR 4.7.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -27,6 +27,16 @@ public interface CalculetteListener extends ParseTreeListener {
 	 */
 	void exitCalcul(CalculetteParser.CalculContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link CalculetteParser#bloc_instructs}.
+	 * @param ctx the parse tree
+	 */
+	void enterBloc_instructs(CalculetteParser.Bloc_instructsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CalculetteParser#bloc_instructs}.
+	 * @param ctx the parse tree
+	 */
+	void exitBloc_instructs(CalculetteParser.Bloc_instructsContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link CalculetteParser#instruction}.
 	 * @param ctx the parse tree
 	 */
@@ -37,6 +47,36 @@ public interface CalculetteListener extends ParseTreeListener {
 	 */
 	void exitInstruction(CalculetteParser.InstructionContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link CalculetteParser#decl}.
+	 * @param ctx the parse tree
+	 */
+	void enterDecl(CalculetteParser.DeclContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CalculetteParser#decl}.
+	 * @param ctx the parse tree
+	 */
+	void exitDecl(CalculetteParser.DeclContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CalculetteParser#assignation}.
+	 * @param ctx the parse tree
+	 */
+	void enterAssignation(CalculetteParser.AssignationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CalculetteParser#assignation}.
+	 * @param ctx the parse tree
+	 */
+	void exitAssignation(CalculetteParser.AssignationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CalculetteParser#methode}.
+	 * @param ctx the parse tree
+	 */
+	void enterMethode(CalculetteParser.MethodeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CalculetteParser#methode}.
+	 * @param ctx the parse tree
+	 */
+	void exitMethode(CalculetteParser.MethodeContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link CalculetteParser#expression}.
 	 * @param ctx the parse tree
 	 */
@@ -46,6 +86,16 @@ public interface CalculetteListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitExpression(CalculetteParser.ExpressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CalculetteParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void enterCondition(CalculetteParser.ConditionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CalculetteParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void exitCondition(CalculetteParser.ConditionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CalculetteParser#finInstruction}.
 	 * @param ctx the parse tree
