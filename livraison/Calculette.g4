@@ -57,15 +57,6 @@ calcul returns [ String code ]
 
         { $code += "  HALT\n"; }
     ;
-bloc_instructs returns [ String code ]
-@init{ $code = new String(); }   // On initialise code, pour ensuite l'utiliser comme accumulateur
-@after{ System.out.println($code); }
-    :   (decl { $code += $decl.code; })*
-
-        NEWLINE*
-
-        (instruction { $code += $instruction.code; })*
-    ;
 
 instruction returns [ String code ]
     : expression finInstruction
@@ -122,28 +113,43 @@ assignation returns [ String code ]
       ;
 
 methode returns [ String code ]
-    : 'read' + '(' IDENTIFIANT ')'
+    : 'read' '(' IDENTIFIANT ')'
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "READ\n";
             $code += "STOREG "+ at.adresse+"\n";
         }
-    | 'write' + '(' expression ')'
+    | 'write' '(' expression ')'
         {
             $code = $expression.code;
             $code += "WRITE\n";
             $code += "POP\n";
         }
-    | 'while' + '(' a=condition ')' BLOCK_DEBUT b=bloc_instructs BLOCK_END
+    | 'while' '(' a=condition ')' '{' b=instruction+ '}'
         {
             $code = loopWhile($a.code, $b.code);
         }
 
-    | 'while' + '(' ab=condition ')' bb=instruction
+    | 'while' '(' ab=condition ')' bb=instruction
         {
             $code = loopWhile($ab.code, $bb.code);
         }
-    | 'for' + '(' forAss=assignation ';' forCond=condition ';' forAssb=assignation ')' forIn=instruction
+    | 'for' '(' forAssB = assignation ';' forCondB = condition ';' forAssbB = assignation ')'
+         '{' forInB = instruction '}'
+        {
+            String debutFor = getNewLabel();
+            String finFor = getNewLabel();
+            $code = $forAssB.code;
+            $code += "LABEL " + debutFor + "\n";
+            $code += $forCondB.code;
+            $code += "JUMPF " + finFor + "\n";
+            $code += $forInB.code;
+            $code += $forAssbB.code;
+            $code += "JUMP " + debutFor + "\n";
+            $code += "LABEL " + finFor + "\n";
+        }
+    
+    | 'for' '(' forAss=assignation ';' forCond=condition ';' forAssb=assignation ')' forIn=instruction
         {
             String debutFor = getNewLabel();
             String finFor = getNewLabel();
@@ -158,24 +164,51 @@ methode returns [ String code ]
         }
 
 
-    | 'if' + '(' condif = condition ')' then = instruction
+    | 'repeat' '{' bloc_instructs=instruction+ '}' 'until' '(' condition ')'
         {
-            $code = ifThenElse($condif.code, $then.code, "null");
-        }    
-    | 'if' + '(' condifE = condition ')' thenE = instruction 'else' elseE = instruction 
-        {
-            $code = ifThenElse($condifE.code, $thenE.code, $elseE.code);
-        }
+            String debutReapeat = getNewLabel();
+            $code = "LABEL " + debutReapeat + "\n";
+            $code += $bloc_instructs.code;
+            $code += $condition.code;
+            $code += "JUMPF " + debutReapeat + "\n";
 
-    | 'if' + '(' condifb = condition ')' BLOCK_DEBUT blocif = bloc_instructs BLOCK_END
+        }     
+
+    | 'repeat' instruction 'until' '(' condition ')'
+        {
+            String debutReapeat = getNewLabel();
+            $code = "LABEL " + debutReapeat + "\n";
+            $code += $instruction.code;
+            $code += $condition.code;
+            $code += "JUMPF " + debutReapeat + "\n";
+
+        }     
+    | 'if' '(' condifelse = condition ')' '{' blocifelse = instruction+ '}'
+         'else'  '{' blocelse = instruction+ '}'
+        {
+            $code = ifThenElse($condifelse.code, $blocelse.code, $blocelse.code);
+        } 
+    | 'if' '(' condifbB = condition ')' '{'  blocifB = instruction+ '}'
+         'else' elseinstruc = instruction
+        {
+            $code = ifThenElse($condifbB.code, $blocifB.code, $elseinstruc.code);
+        } 
+    | 'if' '(' condifb = condition ')' '{'  blocif = instruction+ '}'
         {
             $code = ifThenElse($condifb.code, $blocif.code, "null");
         } 
-    | 'if' + '(' condifelse = condition ')' BLOCK_DEBUT blocifelse = bloc_instructs BLOCK_END 
-        'else' BLOCK_DEBUT blocelse = bloc_instructs BLOCK_END
+    | 'if' '(' condifE = condition ')' thenE = instruction 
+        'else' elseE = instruction 
         {
-            $code = ifThenElse($condifelse.code, $blocelse.code, $blocelse.code);
-        }
+            $code = ifThenElse($condifE.code, $thenE.code, $elseE.code);
+        }  
+    | 'if' '(' condif = condition ')' then = instruction
+        {
+            $code = ifThenElse($condif.code, $then.code, "null");
+        }    
+
+
+
 
     ;
 
@@ -269,16 +302,14 @@ finInstruction : ( NEWLINE | ';' )+ ;
 // lexer
 NEWLINE : '\r'? '\n';
 
+WS :   (' '|'\t')+ -> skip  ;
+
 TYPE : 'int' | 'float' ;
 
-IDENTIFIANT : ('a'..'z'|'A'..'Z')+;
-
-WS :   (' '|'\t')+ -> skip  ;
+IDENTIFIANT :[a-z]+;
 
 NUMBER : ('0'..'9')+  ;
 
-BLOCK_DEBUT: '{';
-
-BLOCK_END: '}';
+COMMENT : '/*' .*? '*/'-> skip;
 
 UNMATCH : . -> skip ;
