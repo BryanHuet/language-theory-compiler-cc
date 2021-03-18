@@ -62,7 +62,6 @@ instruction returns [ String code ]
     : expression finInstruction
         {
             $code = $expression.code;
-            $code += "POP\n";
         }
     | assignation finInstruction
         {
@@ -74,7 +73,7 @@ instruction returns [ String code ]
             $code = $condition.code;
         }
 
-    | methode finInstruction
+    | methode 
         {
             $code = $methode.code;
         }
@@ -82,7 +81,6 @@ instruction returns [ String code ]
     | finInstruction
         {
             $code ="";
-            $code += "POP\n";
         }
     ;
 
@@ -95,7 +93,7 @@ decl returns [ String code ]
         }
     ;
 bloc returns [String code] @init{ $code = new String(); } 
-    : ( instruction { $code += $instruction.code; } )+
+    : '{' ( instruction { $code += $instruction.code; } )+ '}'
     ;   
 
 assignation returns [ String code ]
@@ -128,7 +126,7 @@ methode returns [ String code ]
             $code += "WRITE\n";
             $code += "POP\n";
         }
-    | 'while' '(' a=condition ')' '{' b=bloc '}'
+    | 'while' '(' a=condition ')' b=bloc 
         {
             $code = loopWhile($a.code, $b.code);
         }
@@ -138,7 +136,7 @@ methode returns [ String code ]
             $code = loopWhile($ab.code, $bb.code);
         }
     | 'for' '(' forAssB = assignation ';' forCondB = condition ';' forAssbB = assignation ')'
-         '{' forInB = instruction '}'
+         forInB = bloc
         {
             String debutFor = getNewLabel();
             String finFor = getNewLabel();
@@ -167,7 +165,7 @@ methode returns [ String code ]
         }
 
 
-    | 'repeat' '{' bloc_instructs=instruction+ '}' 'until' '(' condition ')'
+    | 'repeat' bloc_instructs = bloc 'until' '(' condition ')'
         {
             String debutReapeat = getNewLabel();
             $code = "LABEL " + debutReapeat + "\n";
@@ -185,23 +183,20 @@ methode returns [ String code ]
             $code += $condition.code;
             $code += "JUMPF " + debutReapeat + "\n";
 
-        }     
-    | 'if' '(' condifelse = condition ')' '{' blocifelse = bloc '}'
-         'else'  '{' blocelse = bloc '}'
+        }        
+    | 'if' '(' condifelse = condition ')'  blocifelse = bloc 
+         ( NEWLINE 'else' | 'else' )  blocelse = bloc 
         {
             $code = ifThenElse($condifelse.code, $blocelse.code, $blocelse.code);
-        } 
-    | 'if' '(' condifbB = condition ')' '{'  blocifB = bloc '}'
-         'else'  elseinstruc = instruction
+        }
+    | 'if' '(' condifbB = condition ')'   blocifB = bloc 
+         ( NEWLINE 'else' | 'else' )  elseinstruc = instruction
         {
             $code = ifThenElse($condifbB.code, $blocifB.code, $elseinstruc.code);
         } 
-    | 'if' '(' condifb = condition ')' '{'  blocif = bloc '}'
-        {
-            $code = ifThenElse($condifb.code, $blocif.code, "null");
-        } 
+
     | 'if' '(' condifE = condition ')' thenE = instruction 
-         'else' elseE = instruction 
+         ( NEWLINE 'else' | 'else' ) elseE = instruction 
         {
             $code = ifThenElse($condifE.code, $thenE.code, $elseE.code);
         }  
@@ -209,7 +204,10 @@ methode returns [ String code ]
         {
             $code = ifThenElse($condif.code, $then.code, "null");
         }    
-
+    | 'if' '(' condifb = condition ')'   blocif = bloc 
+        {
+            $code = ifThenElse($condifb.code, $blocif.code, "null");
+        } 
 
 
 
@@ -263,6 +261,8 @@ expression returns [ String code ]
 condition returns [String code]
     : 'true'  { $code = "  PUSHI 1\n"; }
     | 'false' { $code = "  PUSHI 0\n"; }
+    | '! true' {$code = " PUSHI 0\n"; }
+    | '! false' {$code = " PUSHI 1\n"; }
     | expr1=expression op=('=='|'!='|'<'|'>'|'<='|'>=') expr2=expression
         {
             $code = $expr1.code + $expr2.code;
