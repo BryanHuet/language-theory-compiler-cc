@@ -94,6 +94,9 @@ decl returns [ String code ]
             $code = "PUSHG "+at.adresse+"\n";
         }
     ;
+bloc returns [String code] @init{ $code = new String(); } 
+    : ( instruction { $code += $instruction.code; } )+
+    ;   
 
 assignation returns [ String code ]
     : IDENTIFIANT '=' expression
@@ -125,7 +128,7 @@ methode returns [ String code ]
             $code += "WRITE\n";
             $code += "POP\n";
         }
-    | 'while' '(' a=condition ')' '{' b=instruction+ '}'
+    | 'while' '(' a=condition ')' '{' b=bloc '}'
         {
             $code = loopWhile($a.code, $b.code);
         }
@@ -183,22 +186,22 @@ methode returns [ String code ]
             $code += "JUMPF " + debutReapeat + "\n";
 
         }     
-    | 'if' '(' condifelse = condition ')' '{' blocifelse = instruction+ '}'
-         'else'  '{' blocelse = instruction+ '}'
+    | 'if' '(' condifelse = condition ')' '{' blocifelse = bloc '}'
+         'else'  '{' blocelse = bloc '}'
         {
             $code = ifThenElse($condifelse.code, $blocelse.code, $blocelse.code);
         } 
-    | 'if' '(' condifbB = condition ')' '{'  blocifB = instruction+ '}'
-         'else' elseinstruc = instruction
+    | 'if' '(' condifbB = condition ')' '{'  blocifB = bloc '}'
+         'else'  elseinstruc = instruction
         {
             $code = ifThenElse($condifbB.code, $blocifB.code, $elseinstruc.code);
         } 
-    | 'if' '(' condifb = condition ')' '{'  blocif = instruction+ '}'
+    | 'if' '(' condifb = condition ')' '{'  blocif = bloc '}'
         {
             $code = ifThenElse($condifb.code, $blocif.code, "null");
         } 
     | 'if' '(' condifE = condition ')' thenE = instruction 
-        'else' elseE = instruction 
+         'else' elseE = instruction 
         {
             $code = ifThenElse($condifE.code, $thenE.code, $elseE.code);
         }  
