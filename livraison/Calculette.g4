@@ -2,8 +2,10 @@ grammar Calculette;
 
 @members {
     private int _cur_label = 1;
-     /** générateur de nom d'étiquettes pour les boucles */
+    private int _cur_fonction_label = 1;
+     /** générateur de nom d'étiquettes pour les boucles et fonctions */
     private String getNewLabel() { return "B" + (_cur_label++);}
+    private String getNewFonctionLabel() { return "F" + (_cur_fonction_label++);}
 
     private TablesSymboles tablesSymboles = new TablesSymboles();
 
@@ -46,16 +48,20 @@ grammar Calculette;
 start
     : calcul EOF;
 
-calcul returns [ String code ]
-@init{ $code = new String(); }   // On initialise code, pour ensuite l'utiliser comme accumulateur
+calcul returns [ String code ] 
+@init{ $code = new String(); }   // On initialise $code, pour ensuite l'utiliser comme accumulateur 
 @after{ System.out.println($code); }
-    :   (decl { $code += $decl.code; })*
-
+    :   (decl { $code += $decl.code; })*        
+        { $code += "  JUMP Main\n"; }
         NEWLINE*
-
+        
+        (fonction { $code += $fonction.code; })* 
+        NEWLINE*
+        
+        { $code += "LABEL Main\n"; }
         (instruction { $code += $instruction.code; })*
 
-        { $code += "  HALT\n"; }
+        { $code += "  HALT\n"; } 
     ;
 
 instruction returns [ String code ]
@@ -78,6 +84,13 @@ instruction returns [ String code ]
             $code = $methode.code;
         }
 
+    | RETURN expression finInstruction    
+        {
+            $code = $expression.code;
+            $code += "RETURN \n";
+        }
+
+
     | finInstruction
         {
             $code ="";
@@ -92,8 +105,80 @@ decl returns [ String code ]
             $code = "PUSHG "+at.adresse+"\n";
         }
     ;
+
+fonction returns [ String code ]
+@init{  tablesSymboles.newTableLocale(); } // instancier la table locale
+@after{ tablesSymboles.dropTableLocale(); } // détruire la table locale
+    : TYPE 
+        { 
+            // code java pour gérer la déclaration de "la variable" de retour de la fonction
+            tablesSymboles.putVar("return",$TYPE.text);
+        }
+        IDENTIFIANT '('  params ? ')' 
+        { 
+            // déclarer la nouvelle fonction
+            String labelFunction = getNewLabel();
+            tablesSymboles.newFunction($IDENTIFIANT.text,labelFunction);
+            $code = "LABEL "+labelFunction +"\n";
+            $code += $params.code;
+        }
+        bloc 
+        {
+            // corps de la fonction
+            $code = $bloc.code + " RETURN\n";
+        }
+    ;
+
+
+params returns [ String code ]
+    : TYPE IDENTIFIANT 
+        { 
+            // code java gérant la déclaration de "la variable" de retour de la fonction
+        }  
+        ( ',' TYPE IDENTIFIANT 
+            { 
+                // code java gérant une variable locale (argi)
+            } 
+        )*
+    ;
+
+ // init nécessaire à cause du ? final et donc args peut être vide (mais $args sera non null) 
+args returns [ String code, int size] @init{ $code = new String(); $size = 0; }
+    : ( expression 
+    { 
+        // code java pour première expression pour arg
+        $code = $expression.code;
+        $size = $size + 1;
+
+    }
+    ( ',' expression 
+    { 
+        // code java pour expression suivante pour arg
+        $code = $expression.code;
+        $size = $size + 1;
+    } 
+    )* 
+      )? 
+    ;
+
+expr returns [ String code, String type ]
+    :
+    //...
+    | IDENTIFIANT '(' args ')'                  // appel de fonction  c'est ici le CALL
+        {  
+            $code = "PUSHI 0\n"; //on reserve de la place pour la valeur de retour
+            $code += $args.code; // on empile les arguments
+            $code += "CALL " + tablesSymboles.getFunction($IDENTIFIANT.text);
+            for(int i = 0; i < $args.size; i++){
+                $code += "POP\n";
+            }
+        }
+    ;
+
+
 bloc returns [String code] @init{ $code = new String(); } 
-    : '{' ( instruction { $code += $instruction.code; } )+ '}'
+    : '{' ( instruction { $code += $instruction.code; } )+ '}' NEWLINE
+    | '{' ( instruction { $code += $instruction.code; } )+ '}'
     ;   
 
 assignation returns [ String code ]
@@ -299,13 +384,19 @@ condition returns [String code]
         }
 
     ;
-
+    
+//comment 
+  //  : '/*' .*? '*/' -> skip;
+    //
+    //| 
+    //;    
 finInstruction : ( NEWLINE | ';' )+ ;
 
 // lexer
 NEWLINE : '\r'? '\n';
-
 WS :   (' '|'\t')+ -> skip  ;
+
+RETURN: 'return' ;
 
 TYPE : 'int' | 'float' ;
 
@@ -313,6 +404,10 @@ IDENTIFIANT :[a-z]+;
 
 NUMBER : ('0'..'9')+  ;
 
-COMMENT : '/*' .*? '*/'-> skip;
+COMMENT
+: '/*' .*? '*/' -> skip;
+
+COMMENT_INLINE
+: '//' ~( '\r' | '\n' )* -> skip;
 
 UNMATCH : . -> skip ;
