@@ -116,7 +116,7 @@ fonction returns [ String code ]
             tablesSymboles.newFunction($IDENTIFIANT.text,labelFunction);
             $code = "LABEL "+labelFunction +"\n";
         }
-        bloc 
+        bloc finInstruction
         {
             // corps de la fonction
             $code += $bloc.code;
@@ -134,7 +134,7 @@ decl returns [ String code ]
         {
             tablesSymboles.putVar($IDENTIFIANT.text,"int");
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            if (tablesSymboles._tableLocale == null){
+            if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
                 $code = "PUSHG " + at.adresse + "\n";
                 $code += $expression.code;
                 $code += "STOREG " + at.adresse + "\n";
@@ -189,7 +189,7 @@ assignation returns [ String code ]
     : IDENTIFIANT '=' expression
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            if (tablesSymboles._tableLocale == null){
+            if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
                 $code = $expression.code;
                 $code += "STOREG " + at.adresse+"\n";
             }else{
@@ -201,7 +201,7 @@ assignation returns [ String code ]
         {
             tablesSymboles.putVar($IDENTIFIANT.text,"int");
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            if (tablesSymboles._tableLocale == null){
+            if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
                 $code = "PUSHG " + at.adresse + "\n";
                 $code += $expression.code;
                 $code += "STOREG " + at.adresse + "\n";
@@ -364,7 +364,7 @@ expression returns [ String code ]
     | IDENTIFIANT
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = tablesSymboles._tableLocale == null ? "PUSHG " + at.adresse + "\n" : "PUSHL " + at.adresse + "\n"; 
+            $code = tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null ? "PUSHG " + at.adresse + "\n" : "PUSHL " + at.adresse + "\n"; 
         
         }
 
@@ -436,7 +436,7 @@ RETURN: 'return' ;
 
 TYPE : 'int' | 'float' ;
 
-IDENTIFIANT :[a-z]+;
+IDENTIFIANT : ('a'..'z' | 'A'..'Z')('a'..'z'|'0'..'9')* ;
 
 NUMBER : ('0'..'9')+  ;
 
