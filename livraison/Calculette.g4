@@ -87,7 +87,9 @@ instruction returns [ String code ]
     | RETURN expression finInstruction    
         {
             $code = $expression.code;
-            $code += "RETURN \n";
+            AdresseType at = tablesSymboles.getAdresseType("return");
+            $code += " STOREL " + at.adresse + "\n";
+            $code += " RETURN \n";
         }
 
 
@@ -97,14 +99,7 @@ instruction returns [ String code ]
         }
     ;
 
-decl returns [ String code ]
-    : TYPE IDENTIFIANT finInstruction
-        {
-            tablesSymboles.putVar($IDENTIFIANT.text,"int");
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n";
-        }
-    ;
+
 
 fonction returns [ String code ]
 @init{  tablesSymboles.newTableLocale(); } // instancier la table locale
@@ -114,30 +109,54 @@ fonction returns [ String code ]
             // code java pour gérer la déclaration de "la variable" de retour de la fonction
             tablesSymboles.putVar("return",$TYPE.text);
         }
-        IDENTIFIANT '('  params ? ')' 
+        IDENTIFIANT '(' params? ')'
         { 
             // déclarer la nouvelle fonction
             String labelFunction = getNewLabel();
             tablesSymboles.newFunction($IDENTIFIANT.text,labelFunction);
             $code = "LABEL "+labelFunction +"\n";
-            $code += $params.code;
         }
         bloc 
         {
             // corps de la fonction
-            $code = $bloc.code + " RETURN\n";
+            $code += $bloc.code;
         }
     ;
 
-
+decl returns [ String code ]
+    : TYPE IDENTIFIANT finInstruction
+        {
+            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            $code = "PUSHG " + at.adresse + "\n";
+        }
+    | TYPE IDENTIFIANT '=' expression finInstruction
+        {
+            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            if (tablesSymboles._tableLocale == null){
+                $code = "PUSHG " + at.adresse + "\n";
+                $code += $expression.code;
+                $code += "STOREG " + at.adresse + "\n";
+            }else{
+                $code = "PUSHL " + at.adresse + "\n";
+                $code += $expression.code;
+                $code += "STOREL " + at.adresse + "\n";
+            }
+        }
+    ;
+    
 params returns [ String code ]
     : TYPE IDENTIFIANT 
         { 
             // code java gérant la déclaration de "la variable" de retour de la fonction
+            tablesSymboles.putVar($IDENTIFIANT.text, $TYPE.text);
+
         }  
         ( ',' TYPE IDENTIFIANT 
             { 
                 // code java gérant une variable locale (argi)
+                tablesSymboles.putVar($IDENTIFIANT.text, $TYPE.text);
             } 
         )*
     ;
@@ -154,27 +173,12 @@ args returns [ String code, int size] @init{ $code = new String(); $size = 0; }
     ( ',' expression 
     { 
         // code java pour expression suivante pour arg
-        $code = $expression.code;
+        $code += $expression.code;
         $size = $size + 1;
     } 
     )* 
       )? 
     ;
-
-expr returns [ String code, String type ]
-    :
-    //...
-    | IDENTIFIANT '(' args ')'                  // appel de fonction  c'est ici le CALL
-        {  
-            $code = "PUSHI 0\n"; //on reserve de la place pour la valeur de retour
-            $code += $args.code; // on empile les arguments
-            $code += "CALL " + tablesSymboles.getFunction($IDENTIFIANT.text);
-            for(int i = 0; i < $args.size; i++){
-                $code += "POP\n";
-            }
-        }
-    ;
-
 
 bloc returns [String code] @init{ $code = new String(); } 
     : '{' ( instruction { $code += $instruction.code; } )+ '}' NEWLINE
@@ -185,16 +189,27 @@ assignation returns [ String code ]
     : IDENTIFIANT '=' expression
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = $expression.code;
-            $code += "STOREG "+at.adresse+"\n";
+            if (tablesSymboles._tableLocale == null){
+                $code = $expression.code;
+                $code += "STOREG " + at.adresse+"\n";
+            }else{
+                $code = $expression.code;
+                $code += "STOREL " + at.adresse + "\n";
+            }
         }
     | TYPE IDENTIFIANT '=' expression
         {
             tablesSymboles.putVar($IDENTIFIANT.text,"int");
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n";
-            $code += $expression.code;
-            $code += "STOREG "+at.adresse+"\n";
+            if (tablesSymboles._tableLocale == null){
+                $code = "PUSHG " + at.adresse + "\n";
+                $code += $expression.code;
+                $code += "STOREG " + at.adresse + "\n";
+            }else{
+                $code = "PUSHL " + at.adresse + "\n";
+                $code += $expression.code;
+                $code += "STOREL " + at.adresse + "\n";
+            }
         }
       ;
 
@@ -327,10 +342,30 @@ expression returns [ String code ]
         $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
     }
 
+    | IDENTIFIANT '()'                  // appel de fonction  c'est ici le CALL
+        {  
+            $code = "PUSHI 0\n"; //on reserve de la place pour la valeur de retour
+            $code += "CALL " + tablesSymboles.getFunction($IDENTIFIANT.text)+ "\n";
+            for(int i = 0; i < $args.size; i++){
+                $code += "POP\n";
+            }
+        }    
+    | IDENTIFIANT '(' args ')'                  // appel de fonction  c'est ici le CALL
+        {  
+            $code = "PUSHI 0\n"; //on reserve de la place pour la valeur de retour
+            $code += $args.code; // on empile les arguments
+            $code += "CALL " + tablesSymboles.getFunction($IDENTIFIANT.text) + "\n";
+            for(int i = 0; i < $args.size; i++){
+                $code += "POP\n";
+            }
+        }
+
+
     | IDENTIFIANT
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG "+at.adresse+"\n";
+            $code = tablesSymboles._tableLocale == null ? "PUSHG " + at.adresse + "\n" : "PUSHL " + at.adresse + "\n"; 
+        
         }
 
     | '-' NUMBER
@@ -394,6 +429,7 @@ finInstruction : ( NEWLINE | ';' )+ ;
 
 // lexer
 NEWLINE : '\r'? '\n';
+
 WS :   (' '|'\t')+ -> skip  ;
 
 RETURN: 'return' ;
