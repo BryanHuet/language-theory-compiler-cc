@@ -60,7 +60,7 @@ class TablesSymboles {
      * le calcul 
      *
      */
-    private AdresseType getAdresseTypeLocale(String symbol) {
+    public AdresseType getAdresseTypeLocale(String symbol) {
 	if (_tableLocale != null) {
 	    System.err.println("Recherche de "+ symbol + " dans table locale: " + _tableLocale);
 	    AdresseType a = _tableLocale.getAdresseType(symbol);
