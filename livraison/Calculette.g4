@@ -126,13 +126,13 @@ fonction returns [ String code ]
 decl returns [ String code ]
     : TYPE IDENTIFIANT finInstruction
         {
-            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            tablesSymboles.putVar($IDENTIFIANT.text,$TYPE.text);
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = "PUSHG " + at.adresse + "\n";
         }
     | TYPE IDENTIFIANT '=' expression finInstruction
         {
-            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            tablesSymboles.putVar($IDENTIFIANT.text,$TYPE.text);
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
                 $code = "PUSHG " + at.adresse + "\n";
@@ -199,7 +199,7 @@ assignation returns [ String code ]
         }
     | TYPE IDENTIFIANT '=' expression
         {
-            tablesSymboles.putVar($IDENTIFIANT.text,"int");
+            tablesSymboles.putVar($IDENTIFIANT.text,$TYPE.text);
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
                 $code = "PUSHG " + at.adresse + "\n";
@@ -217,9 +217,19 @@ methode returns [ String code ]
     : 'read' '(' IDENTIFIANT ')'
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "READ\n";
+            $code = at.type == "int" ? "READ\n" : "READF\n";
             $code += "STOREG "+ at.adresse+"\n";
+        }    
+    | 'write' '(' IDENTIFIANT ')'
+        {
+            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
+            if (at.type == "float"){
+                $code = "PUSHG " + at.adresse + "\n";
+                $code += "WRITE\n";
+                $code += "POP\n";
+            }
         }
+
     | 'write' '(' expression ')'
         {
             $code = $expression.code;
@@ -342,14 +352,6 @@ expression returns [ String code ]
         $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
     }
 
-    | IDENTIFIANT '()'                  // appel de fonction  c'est ici le CALL
-        {  
-            $code = "PUSHI 0\n"; //on reserve de la place pour la valeur de retour
-            $code += "CALL " + tablesSymboles.getFunction($IDENTIFIANT.text)+ "\n";
-            for(int i = 0; i < $args.size; i++){
-                $code += "POP\n";
-            }
-        }    
     | IDENTIFIANT '(' args ')'                  // appel de fonction  c'est ici le CALL
         {  
             $code = "PUSHI 0\n"; //on reserve de la place pour la valeur de retour
@@ -366,6 +368,11 @@ expression returns [ String code ]
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             $code = tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null ? "PUSHG " + at.adresse + "\n" : "PUSHL " + at.adresse + "\n"; 
         
+        }
+    
+    | unite=NUMBER '.' decimal=NUMBER
+        { 
+            $code = "PUSHF " + $unite.text + "." + $decimal.text + "\n";
         }
 
     | '-' NUMBER
@@ -420,11 +427,6 @@ condition returns [String code]
 
     ;
     
-//comment 
-  //  : '/*' .*? '*/' -> skip;
-    //
-    //| 
-    //;    
 finInstruction : ( NEWLINE | ';' )+ ;
 
 // lexer
