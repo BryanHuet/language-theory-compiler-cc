@@ -128,7 +128,12 @@ decl returns [ String code ]
         {
             tablesSymboles.putVar($IDENTIFIANT.text,$TYPE.text);
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = "PUSHG " + at.adresse + "\n";
+            if($TYPE.text.equals("float")){
+                $code = "PUSHG " + at.adresse + "\n";
+                $code += "PUSHG " + (at.adresse+1) + "\n";
+            }else{
+                $code = "PUSHG " + at.adresse + "\n";
+            }
         }
     | TYPE IDENTIFIANT '=' expression finInstruction
         {
@@ -220,21 +225,18 @@ methode returns [ String code ]
             $code = at.type == "int" ? "READ\n" : "READF\n";
             $code += "STOREG "+ at.adresse+"\n";
         }    
-    | 'write' '(' IDENTIFIANT ')'
-        {
-            AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            if (at.type == "float"){
-                $code = "PUSHG " + at.adresse + "\n";
-                $code += "WRITE\n";
-                $code += "POP\n";
-            }
-        }
 
     | 'write' '(' expression ')'
         {
             $code = $expression.code;
-            $code += "WRITE\n";
-            $code += "POP\n";
+            if($expression.type=="float"){
+               $code += "WRITEF\n"; 
+               $code += "POP\n";
+               $code += "POP\n";
+            }else{
+                $code += "WRITE\n";
+                $code += "POP\n";
+            }
         }
     | 'while' '(' a=condition ')' b=bloc 
         {
@@ -323,7 +325,7 @@ methode returns [ String code ]
 
     ;
 
-expression returns [ String code ]
+expression returns [ String code, String type ]
     : '(' a=expression op=('-'|'+') b=expression ')'
         {
             $code = $a.code + $b.code;
@@ -362,16 +364,22 @@ expression returns [ String code ]
             }
         }
 
-
     | IDENTIFIANT
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null ? "PUSHG " + at.adresse + "\n" : "PUSHL " + at.adresse + "\n"; 
-        
+            if(at.type.equals("float")){
+                $type = "float";
+            }else {
+                $type = "int";
+            }
+            $code = tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null ? 
+                    "PUSHG " + at.adresse + "\n" : "PUSHL " + at.adresse + "\n"; 
+
         }
     
     | unite=NUMBER '.' decimal=NUMBER
         { 
+            $type = "float";
             $code = "PUSHF " + $unite.text + "." + $decimal.text + "\n";
         }
 

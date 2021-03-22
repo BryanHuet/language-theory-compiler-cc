@@ -17,7 +17,7 @@ import java.util.*;
  */
 class TablesSymboles {
     private TableSymboles _tableGlobale = new TableSymboles();
-    public TableSymboles _tableLocale = null;
+    private TableSymboles _tableLocale = null;
     
     public void newTableLocale() { 
 	_tableLocale = new TableSymboles(); 
