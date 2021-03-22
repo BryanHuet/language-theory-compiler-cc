@@ -222,7 +222,7 @@ methode returns [ String code ]
     : 'read' '(' IDENTIFIANT ')'
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = at.type == "int" ? "READ\n" : "READF\n";
+            $code = at.type.equals("int") ? "READ\n" : "READF\n";
             $code += "STOREG "+ at.adresse+"\n";
         }    
 
