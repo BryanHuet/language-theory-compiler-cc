@@ -383,7 +383,12 @@ methode returns [ String code ]
     ;
 
 expression returns [ String code, String type ]
-    : '(' a=expression op=('-'|'+') b=expression ')'
+    : '(' expression ')'
+        {
+            $type = $expression.type;
+            $code = $expression.code;
+        }
+    | '(' a=expression op=('-'|'+') b=expression ')'
         {
             if ($a.type.equals($b.type)){
                 $type = $a.type;
@@ -434,24 +439,7 @@ expression returns [ String code, String type ]
             }
         }
 
-    | op=('(-'|'(') floatpar=NUMBER '.' ')'
-        {
-            $type = "float";
-            $code = $op.text.equals("(-") ? "PUSHF -" + $floatpar.text+"."+"\n" 
-                                            : "PUSHF " + $floatpar.text+"."+"\n";
-        }    
-    | op=('(-'|'(') entierpar=NUMBER '.' decimalpar=NUMBER ')'
-        {
-            $type = "float";
-            $code = $op.text.equals("(-") ? "PUSHF -" + $entierpar.text+"."+$decimalpar.text+"\n" 
-                                            : "PUSHF " + $entierpar.text+"."+$decimalpar.text+"\n";
-        }    
 
-    | op=('(-'|'(') NUMBER ')'
-        {
-            $type = "int";
-            $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
-        }
 
     | IDENTIFIANT '(' args ')'                  // appel de fonction  c'est ici le CALL
         {  
@@ -466,6 +454,19 @@ expression returns [ String code, String type ]
             $code += "CALL " + tablesSymboles.getFunction($IDENTIFIANT.text) + "\n";
             for(int i = 0; i < $args.size; i++){
                 $code += "POP\n";
+            }
+        }
+
+    | '(' TYPE ')' expression
+        {
+            if ($TYPE.text.equals("int")){
+                    $code = $expression.code;
+                    $code += "FTOI\n";
+                    $type = "int";
+            }else{
+                    $code = $expression.code;
+                    $code += "ITOF\n";
+                    $type = "float";
             }
         }
 
@@ -492,7 +493,8 @@ expression returns [ String code, String type ]
                 }
             }
         }
-    
+
+
     | unite=NUMBER '.' decimal=NUMBER
         { 
             $type = "float";
