@@ -522,23 +522,45 @@ condition returns [String code]
     | '! false' {$code = " PUSHI 1\n"; }
     | expr1=expression op=('=='|'!='|'<'|'>'|'<='|'>=') expr2=expression
         {
-            $code = $expr1.code + $expr2.code;
-            if ($op.text.equals("==")){ $code += "EQUAL\n"; }
-            else if ($op.text.equals("!=")){ $code += "NEQ\n"; }
-            else if ($op.text.equals("<")){ $code += "INF\n"; }
-            else if ($op.text.equals(">")){ $code += "SUP\n"; }
-            else if ($op.text.equals("<=")){ $code += "INFEQ\n"; }
-            else if ($op.text.equals(">=")){ $code += "SUPEQ\n"; }
+            if($expr1.type.equals("float")){
+                $code = $expr1.code + $expr2.code;
+                if ($op.text.equals("==")){ $code += "FEQUAL\n"; }
+                else if ($op.text.equals("!=")){ $code += "FNEQ\n"; }
+                else if ($op.text.equals("<")){ $code += "FINF\n"; }
+                else if ($op.text.equals(">")){ $code += "FSUP\n"; }
+                else if ($op.text.equals("<=")){ $code += "FINFEQ\n"; }
+                else if ($op.text.equals(">=")){ $code += "FSUPEQ\n"; }
+            }else{
+                $code = $expr1.code + $expr2.code;
+                if ($op.text.equals("==")){ $code += "EQUAL\n"; }
+                else if ($op.text.equals("!=")){ $code += "NEQ\n"; }
+                else if ($op.text.equals("<")){ $code += "INF\n"; }
+                else if ($op.text.equals(">")){ $code += "SUP\n"; }
+                else if ($op.text.equals("<=")){ $code += "INFEQ\n"; }
+                else if ($op.text.equals(">=")){ $code += "SUPEQ\n"; }
+            }
         }
     | '!' expr3=expression op=('=='|'!='|'<'|'>'|'<='|'>=') expr4=expression
         {
-            $code = $expr3.code + $expr4.code;
-            if ($op.text.equals("==")){ $code += "NEQ\n"; }
-            else if ($op.text.equals("!=")){ $code += "EQUAL\n"; }
-            else if ($op.text.equals("<")){ $code += "SUP\n"; }
-            else if ($op.text.equals(">")){ $code += "INF\n"; }
-            else if ($op.text.equals("<=")){ $code += "SUPEQ\n"; }
-            else if ($op.text.equals(">=")){ $code += "INFEQ\n"; }
+            if($expr3.type.equals("float")){
+                $code = $expr3.code + $expr4.code;
+                if ($op.text.equals("==")){ $code += "FNEQ\n"; }
+                else if ($op.text.equals("!=")){ $code += "FEQUAL\n"; }
+                else if ($op.text.equals("<")){ $code += "FSUP\n"; }
+                else if ($op.text.equals(">")){ $code += "FINF\n"; }
+                else if ($op.text.equals("<=")){ $code += "FSUPEQ\n"; }
+                else if ($op.text.equals(">=")){ $code += "FINFEQ\n"; }
+            
+            
+            }else{
+                $code = $expr3.code + $expr4.code;
+                if ($op.text.equals("==")){ $code += "NEQ\n"; }
+                else if ($op.text.equals("!=")){ $code += "EQUAL\n"; }
+                else if ($op.text.equals("<")){ $code += "SUP\n"; }
+                else if ($op.text.equals(">")){ $code += "INF\n"; }
+                else if ($op.text.equals("<=")){ $code += "SUPEQ\n"; }
+                else if ($op.text.equals(">=")){ $code += "INFEQ\n"; }
+            }
         }
 
     | exprA = condition op='&&' exprB = condition
