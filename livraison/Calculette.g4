@@ -286,7 +286,7 @@ methode returns [ String code ]
     | 'write' '(' expression ')'
         {
             $code = $expression.code;
-            if($expression.type=="float"){
+            if($expression.type.equals("float")){
                $code += "WRITEF\n"; 
                $code += "POP\n";
                $code += "POP\n";
@@ -434,8 +434,22 @@ expression returns [ String code, String type ]
             }
         }
 
+    | op=('(-'|'(') floatpar=NUMBER '.' ')'
+        {
+            $type = "float";
+            $code = $op.text.equals("(-") ? "PUSHF -" + $floatpar.text+"."+"\n" 
+                                            : "PUSHF " + $floatpar.text+"."+"\n";
+        }    
+    | op=('(-'|'(') entierpar=NUMBER '.' decimalpar=NUMBER ')'
+        {
+            $type = "float";
+            $code = $op.text.equals("(-") ? "PUSHF -" + $entierpar.text+"."+$decimalpar.text+"\n" 
+                                            : "PUSHF " + $entierpar.text+"."+$decimalpar.text+"\n";
+        }    
+
     | op=('(-'|'(') NUMBER ')'
         {
+            $type = "int";
             $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
         }
 
