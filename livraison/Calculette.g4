@@ -94,6 +94,9 @@ instruction returns [ String code ]
             }else{
                 $code += " STOREL " + at.adresse + "\n";
             }
+            System.out.println("ici");
+            $code += " RETURN \n";
+            
             $code += " RETURN \n";
         }
 
@@ -126,6 +129,7 @@ fonction returns [ String code ]
         {
             // corps de la fonction
             $code += $bloc.code;
+            System.out.println("mais la aussi");
         }
     ;
 
@@ -356,7 +360,7 @@ methode returns [ String code ]
     | 'if' '(' condifelse = condition ')'  blocifelse = bloc 
          ( NEWLINE 'else' | 'else' )  blocelse = bloc 
         {
-            $code = ifThenElse($condifelse.code, $blocelse.code, $blocelse.code);
+            $code = ifThenElse($condifelse.code, $blocifelse.code, $blocelse.code);
         }
     | 'if' '(' condifbB = condition ')'   blocifB = bloc 
          ( NEWLINE 'else' | 'else' )  elseinstruc = instruction
