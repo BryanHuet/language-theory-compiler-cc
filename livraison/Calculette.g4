@@ -140,13 +140,29 @@ decl returns [ String code ]
             tablesSymboles.putVar($IDENTIFIANT.text,$TYPE.text);
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
-                $code = "PUSHG " + at.adresse + "\n";
-                $code += $expression.code;
-                $code += "STOREG " + at.adresse + "\n";
+                if($TYPE.text.equals("float")){
+                    $code = "PUSHG " + at.adresse + "\n";
+                    $code += "PUSHG " + (at.adresse+1) + "\n";
+                    $code += $expression.code;
+                    $code += "STOREG " + (at.adresse+1) + "\n"; 
+                    $code += "STOREG " + at.adresse + "\n";    
+                }else{
+                    $code = "PUSHG " + at.adresse + "\n";
+                    $code += $expression.code;
+                    $code += "STOREG " + at.adresse + "\n";
+                }
             }else{
-                $code = "PUSHL " + at.adresse + "\n";
-                $code += $expression.code;
-                $code += "STOREL " + at.adresse + "\n";
+                if($TYPE.text.equals("float")){
+                    $code = "PUSHL " + at.adresse + "\n";
+                    $code += "PUSHL " + (at.adresse+1) + "\n";
+                    $code += $expression.code;
+                    $code += "STOREL " + (at.adresse+1) + "\n"; 
+                    $code += "STOREL " + at.adresse + "\n";    
+                }else{
+                    $code = "PUSHL " + at.adresse + "\n";
+                    $code += $expression.code;
+                    $code += "STOREL " + at.adresse + "\n";
+                }
             }
         }
     ;
@@ -195,11 +211,23 @@ assignation returns [ String code ]
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
-                $code = $expression.code;
-                $code += "STOREG " + at.adresse+"\n";
+                if(at.type.equals("float")){
+                    $code = $expression.code;
+                    $code += "STOREG " + (at.adresse+1) + "\n";
+                    $code += "STOREG " + at.adresse + "\n";
+                }else{
+                    $code = $expression.code;
+                    $code += "STOREG " + at.adresse + "\n";
+                }
             }else{
-                $code = $expression.code;
-                $code += "STOREL " + at.adresse + "\n";
+                if(at.type.equals("float")){
+                    $code = $expression.code;
+                    $code += "STOREL " + (at.adresse+1) + "\n";
+                    $code += "STOREL " + at.adresse + "\n";
+                }else{
+                    $code = $expression.code;
+                    $code += "STOREL " + at.adresse + "\n";
+                }
             }
         }
     | TYPE IDENTIFIANT '=' expression
@@ -207,13 +235,29 @@ assignation returns [ String code ]
             tablesSymboles.putVar($IDENTIFIANT.text,$TYPE.text);
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
             if (tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
-                $code = "PUSHG " + at.adresse + "\n";
-                $code += $expression.code;
-                $code += "STOREG " + at.adresse + "\n";
+                if($TYPE.text.equals("float")){
+                    $code = "PUSHG " + at.adresse + "\n";
+                    $code += "PUSHG " + (at.adresse+1) + "\n";
+                    $code += $expression.code;
+                    $code += "STOREG " + (at.adresse+1) + "\n"; 
+                    $code += "STOREG " + at.adresse + "\n";    
+                }else{
+                    $code = "PUSHG " + at.adresse + "\n";
+                    $code += $expression.code;
+                    $code += "STOREG " + at.adresse + "\n";
+                }
             }else{
-                $code = "PUSHL " + at.adresse + "\n";
-                $code += $expression.code;
-                $code += "STOREL " + at.adresse + "\n";
+                if($TYPE.text.equals("float")){
+                    $code = "PUSHL " + at.adresse + "\n";
+                    $code += "PUSHL " + (at.adresse+1) + "\n";
+                    $code += $expression.code;
+                    $code += "STOREL " + (at.adresse+1) + "\n";
+                    $code += "STOREL " + at.adresse + "\n";     
+                }else{
+                    $code = "PUSHL " + at.adresse + "\n";
+                    $code += $expression.code;
+                    $code += "STOREL " + at.adresse + "\n";
+                }
             }
         }
       ;
@@ -222,8 +266,15 @@ methode returns [ String code ]
     : 'read' '(' IDENTIFIANT ')'
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            $code = at.type.equals("int") ? "READ\n" : "READF\n";
-            $code += "STOREG "+ at.adresse+"\n";
+            if(at.type.equals("float")){
+                $code = "READF\n";
+                $code += "STOREG "+ (at.adresse+1)+"\n";
+                $code += "STOREG "+ at.adresse+"\n";
+            }else{
+                $code = "READ\n";
+                $code += "STOREG "+ at.adresse+"\n";
+            }
+
         }    
 
     | 'write' '(' expression ')'
@@ -328,31 +379,47 @@ methode returns [ String code ]
 expression returns [ String code, String type ]
     : '(' a=expression op=('-'|'+') b=expression ')'
         {
-            $code = $a.code + $b.code;
-            $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
+            $code = $a.code + $b.code;        
+            if($a.type.equals("float") && $b.type.equals("float")){
+                $code += $op.text.equals("+") ? "FADD\n" : "FSUB\n";
+            }else{
+                $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
+            }
         }
 
     | '(' a=expression op=('*'|'/') b=expression ')' {
         $code = $a.code + $b.code;
-        $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
+        if($type.equals("float")){
+            $code += $op.text.equals("*") ? "FMUL\n" : "FDIV\n";
+        }else{
+            $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
+        }
     }
 
 
     | a=expression op=('*'|'/') b=expression {
         $code = $a.code + $b.code;
-        $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
+        if($type.equals("float")){
+            $code += $op.text.equals("*") ? "FMUL\n" : "FDIV\n";
+        }else{
+            $code += $op.text.equals("*") ? "MUL\n" : "DIV\n";
+        }
     }
 
     | a=expression op=('-'|'+') b=expression
         {
-            $code = $a.code + $b.code;
-            $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
+            $code = $a.code + $b.code;        
+            if($a.type.equals("float") && $b.type.equals("float")){
+                $code += $op.text.equals("+") ? "FADD\n" : "FSUB\n";
+            }else{
+                $code += $op.text.equals("+") ? "ADD\n" : "SUB\n";
+            }
         }
-    | op=('(-'|'(') NUMBER ')'
 
-    {
-        $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
-    }
+    | op=('(-'|'(') NUMBER ')'
+        {
+            $code = $op.text.equals("(-") ? "PUSHI -"+$NUMBER.text+"\n" : "PUSHI "+$NUMBER.text+"\n";
+        }
 
     | IDENTIFIANT '(' args ')'                  // appel de fonction  c'est ici le CALL
         {  
@@ -367,14 +434,25 @@ expression returns [ String code, String type ]
     | IDENTIFIANT
         {
             AdresseType at = tablesSymboles.getAdresseType($IDENTIFIANT.text);
-            if(at.type.equals("float")){
-                $type = "float";
-            }else {
-                $type = "int";
+            if(tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null){
+                if(at.type.equals("float")){
+                    $type = "float";
+                    $code = "PUSHG " + at.adresse + "\n";
+                    $code += "PUSHG " + (at.adresse+1) + "\n"; 
+                }else {
+                    $type = "int";
+                    $code = "PUSHG " + at.adresse + "\n";
+                }
+            }else{
+                if(at.type.equals("float")){
+                    $type = "float";
+                    $code = "PUSHL " + at.adresse + "\n";
+                    $code += "PUSHL " + (at.adresse+1) + "\n"; 
+                }else {
+                    $type = "int";
+                    $code = "PUSHL " + at.adresse + "\n";
+                }
             }
-            $code = tablesSymboles.getAdresseTypeLocale($IDENTIFIANT.text) == null ? 
-                    "PUSHG " + at.adresse + "\n" : "PUSHL " + at.adresse + "\n"; 
-
         }
     
     | unite=NUMBER '.' decimal=NUMBER
@@ -385,10 +463,12 @@ expression returns [ String code, String type ]
 
     | '-' NUMBER
      {
+         $type = "int";
          $code = "PUSHI -"+$NUMBER.text+"\n";
      }
     | NUMBER
         {
+            $type = "int";
             $code = "PUSHI "+$NUMBER.text+"\n";
         }
     ;
