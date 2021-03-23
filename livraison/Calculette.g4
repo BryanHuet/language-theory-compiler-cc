@@ -88,7 +88,12 @@ instruction returns [ String code ]
         {
             $code = $expression.code;
             AdresseType at = tablesSymboles.getAdresseType("return");
-            $code += " STOREL " + at.adresse + "\n";
+            if(at.type.equals("float")){
+                $code += " STOREL " + (at.adresse+1) + "\n";
+                $code += " STOREL " + at.adresse + "\n";
+            }else{
+                $code += " STOREL " + at.adresse + "\n";
+            }
             $code += " RETURN \n";
         }
 
@@ -107,12 +112,13 @@ fonction returns [ String code ]
     : TYPE 
         { 
             // code java pour gérer la déclaration de "la variable" de retour de la fonction
+            String labelFunction = getNewLabel();
+            tablesSymboles.setTypeFunction(labelFunction,$TYPE.text);
             tablesSymboles.putVar("return",$TYPE.text);
         }
         IDENTIFIANT '(' params? ')'
         { 
             // déclarer la nouvelle fonction
-            String labelFunction = getNewLabel();
             tablesSymboles.newFunction($IDENTIFIANT.text,labelFunction);
             $code = "LABEL "+labelFunction +"\n";
         }
@@ -188,14 +194,14 @@ args returns [ String code, int size] @init{ $code = new String(); $size = 0; }
     { 
         // code java pour première expression pour arg
         $code = $expression.code;
-        $size = $size + 1;
+        $size = $expression.type.equals("float") ? $size + 2 : $size + 1;
 
     }
     ( ',' expression 
     { 
         // code java pour expression suivante pour arg
         $code += $expression.code;
-        $size = $size + 1;
+        $size = $expression.type.equals("float") ? $size + 2 : $size + 1;
     } 
     )* 
       )? 
@@ -379,6 +385,9 @@ methode returns [ String code ]
 expression returns [ String code, String type ]
     : '(' a=expression op=('-'|'+') b=expression ')'
         {
+            if ($a.type.equals($b.type)){
+                $type = $a.type;
+            }
             $code = $a.code + $b.code;        
             if($a.type.equals("float") && $b.type.equals("float")){
                 $code += $op.text.equals("+") ? "FADD\n" : "FSUB\n";
@@ -388,6 +397,9 @@ expression returns [ String code, String type ]
         }
 
     | '(' a=expression op=('*'|'/') b=expression ')' {
+        if ($a.type.equals($b.type)){
+            $type = $a.type;
+        }
         $code = $a.code + $b.code;
         if($type.equals("float")){
             $code += $op.text.equals("*") ? "FMUL\n" : "FDIV\n";
@@ -398,6 +410,9 @@ expression returns [ String code, String type ]
 
 
     | a=expression op=('*'|'/') b=expression {
+        if ($a.type.equals($b.type)){
+            $type = $a.type;
+        }
         $code = $a.code + $b.code;
         if($type.equals("float")){
             $code += $op.text.equals("*") ? "FMUL\n" : "FDIV\n";
@@ -408,6 +423,9 @@ expression returns [ String code, String type ]
 
     | a=expression op=('-'|'+') b=expression
         {
+            if ($a.type.equals($b.type)){
+                $type = $a.type;
+            }       
             $code = $a.code + $b.code;        
             if($a.type.equals("float") && $b.type.equals("float")){
                 $code += $op.text.equals("+") ? "FADD\n" : "FSUB\n";
@@ -423,7 +441,13 @@ expression returns [ String code, String type ]
 
     | IDENTIFIANT '(' args ')'                  // appel de fonction  c'est ici le CALL
         {  
-            $code = "PUSHI 0\n"; //on reserve de la place pour la valeur de retour
+            $type = tablesSymboles.getTypeFunction(tablesSymboles.getFunction($IDENTIFIANT.text));
+            if($type.equals("float")){
+                $code = "PUSHI 0\n"; 
+                $code += "PUSHI 0\n"; 
+            }else {
+                $code = "PUSHI 0\n";
+            }
             $code += $args.code; // on empile les arguments
             $code += "CALL " + tablesSymboles.getFunction($IDENTIFIANT.text) + "\n";
             for(int i = 0; i < $args.size; i++){
@@ -460,7 +484,11 @@ expression returns [ String code, String type ]
             $type = "float";
             $code = "PUSHF " + $unite.text + "." + $decimal.text + "\n";
         }
-
+    | unite=NUMBER '.'
+        { 
+            $type = "float";
+            $code = "PUSHF " + $unite.text + ".0" + "\n";
+        }
     | '-' NUMBER
      {
          $type = "int";
