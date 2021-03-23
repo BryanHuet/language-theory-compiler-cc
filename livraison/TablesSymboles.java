@@ -92,13 +92,33 @@ class TablesSymboles {
     }
 
     private HashMap<String, String> _tableFonctions = new HashMap<String, String>();    
-    
+    private HashMap<String, String> _fonctionsType = new HashMap<String, String>();
+
     public String getFunction(String function) {
 	String l = _tableFonctions.get(function);
 	if (l != null)
 	    return l;
 	System.err.println("Appel Ã  une fonction non dÃ©finie \""+function+"\"");
 	return null;
+    }
+
+    public boolean setTypeFunction(String function, String type){
+        String fat = _fonctionsType.get(function);
+	    if ( fat != null ) {
+	        System.err.println("Fonction \""+ function + "\" dÃ©jÃ  dÃ©finie avec type de retour \"" + fat +"\".");
+	    return false;
+	    }
+        _fonctionsType.put(function,type); 
+        return true;
+    }
+
+    public String getTypeFunction(String function){
+        String fat = _fonctionsType.get(function);
+	    if ( fat == null ) {
+	        System.err.println("Fonction \""+ function + "\" dÃ©jÃ  dÃ©finie avec type de retour \"" + fat +"\".");
+	    return null;
+	    }
+        return fat;
     }
 
     public boolean newFunction(String function,String t) {
