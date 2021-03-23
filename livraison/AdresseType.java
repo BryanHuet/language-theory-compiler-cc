@@ -10,7 +10,7 @@ public  class AdresseType {
     }
 
     public final int adresse;
-    public final String type;
+    public String type;
 
     public AdresseType( int a, String t){
         this.adresse = a; // adress of initial cell on the stack to store the variable
