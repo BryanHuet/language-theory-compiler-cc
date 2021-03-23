@@ -94,7 +94,6 @@ instruction returns [ String code ]
             }else{
                 $code += " STOREL " + at.adresse + "\n";
             }
-            System.out.println("ici");
             $code += " RETURN \n";
         }
 
@@ -127,7 +126,6 @@ fonction returns [ String code ]
         {
             // corps de la fonction
             $code += $bloc.code;
-            System.out.println("mais la aussi");
         }
     ;
 
