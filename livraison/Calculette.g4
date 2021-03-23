@@ -96,8 +96,6 @@ instruction returns [ String code ]
             }
             System.out.println("ici");
             $code += " RETURN \n";
-            
-            $code += " RETURN \n";
         }
 
 
